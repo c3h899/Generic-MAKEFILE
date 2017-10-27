@@ -21,12 +21,12 @@ COMPILE_OPTIONS = -pthread
 ifeq ($(build),release)
 	override build = RELEASE
 	LD_BUILD = 
-	CPP_DEBUG = 
+	CPP_DEBUG = -g0
 else
 	ifeq ($(build),internal)
 		override build = INTERNAL
 		LD_BUILD = 
-		CPP_DEBUG = -g3
+		CPP_DEBUG = -g
 	else
 		# DEFAULT CASE
 		override build = DEBUG
