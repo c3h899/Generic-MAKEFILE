@@ -113,12 +113,20 @@ OBJECTS := $(C_LIBS:.c=.o) $(C_FILES:.c=.o)
 OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 
 #### MAKE RECIPIES ####
+
+#.PHONY targets
+.PHONY: all clean dummy-all from-source info
+
 all: dummy-all
 	@printf "\n($$(date --rfc-3339=seconds)) [COMPLETE]\n"
 
-dummy-all: information $(BINARY_NAME)
-	
-information:
+dummy-all: | info $(BINARY_NAME)
+# Order-dependent to ensure information print-out is at top of console
+
+from-source: | clean all
+# Order-dependent to ensure any existing compiled content is cleaned first.
+
+info:
 	@printf "\n($$(date --rfc-3339=seconds)) [MAKE]"
 	@printf "\nBuild Information:"
 	@printf "\n\tBuild Type: $(build)"
