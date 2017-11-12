@@ -115,7 +115,7 @@ OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 #### MAKE RECIPIES ####
 
 #.PHONY targets
-.PHONY: all clean dummy-all from-source info
+.PHONY: all clean dummy-all from-source info dirs
 
 all: dummy-all
 	@printf "\n($$(date --rfc-3339=seconds)) [COMPLETE]\n"
@@ -137,6 +137,10 @@ info:
 	@printf "\n\tCompiler (CPP): $(CXX_VER)"
 	@printf "\n\tLinker: $(LD_VER)"
 	@printf "\n"
+
+dirs:
+	@mkdir -p $(SOURCEDIR)
+	@mkdir -p $(LIBDIR)
 
 $(BINARY_NAME): $(OBJECTS)
 	@printf "\n($$(date --rfc-3339=seconds)) [LINK BINARY] $@\n"
