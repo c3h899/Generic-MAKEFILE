@@ -178,4 +178,5 @@ clean:
 	@printf "\n($$(date --rfc-3339=seconds)) [CLEAN]\n"
 	@find . -type f -name "*.o" -delete
 	@find . -type f -name "*.d" -delete
+	@rm -f $(BINARY_NAME).map
 	@rm -f $(BINARY_NAME) $(BINARY_NAME).exe
