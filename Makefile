@@ -18,7 +18,6 @@ COMPILE_OPTIONS = -pthread
 # Defaults to debug build configuration if not specified
 # Supported options: debug, internal, release
 #https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/Debugging-Options.html#Debugging-Options
-# DO NOT EDIT BUILD_FILE without consideration of "clean" recipie
 ifeq ($(build),release)
 	override build = RELEASE
 	LD_BUILD = 
