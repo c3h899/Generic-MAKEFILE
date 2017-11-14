@@ -18,6 +18,7 @@ COMPILE_OPTIONS = -pthread
 # Defaults to debug build configuration if not specified
 # Supported options: debug, internal, release
 #https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/Debugging-Options.html#Debugging-Options
+# DO NOT EDIT BUILD_FILE without consideration of "clean" recipie
 ifeq ($(build),release)
 	override build = RELEASE
 	LD_BUILD = 
@@ -119,9 +120,9 @@ OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 #### MAKE RECIPIES ####
 
 #.PHONY targets
-.PHONY: all clean dummy-all from-source info dirs
+.PHONY: all clean dummy-all from-source info dirs version
 
-all: dummy-all
+all: | version dummy-all
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPLETE]$(COLOR_INFO_POST)\n"
 
 dummy-all: | info $(BINARY_NAME)
@@ -145,6 +146,23 @@ info:
 dirs:
 	@mkdir -p $(SOURCEDIR)
 	@mkdir -p $(LIBDIR)
+
+version:
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [VERSION CHECK]$(COLOR_INFO_POST)\n"
+	@if $$(grep -q "$(build)" BUILD) && $$(grep -q "$(optimize)" BUILD); then\
+		printf "Build version and optimization are consistent.\n";\
+	else\
+		make clean;\
+		printf "($$(date --rfc-3339=seconds)) [BUILD]" > BUILD;\
+		printf "\nBuild Information:" >> BUILD;\
+		printf "\n\tBuild Type: $(build)" >> BUILD;\
+		printf "\n\tOptimization: $(optimize)" >> BUILD;\
+		printf "\n\tTarget OS: $(OS)" >> BUILD;\
+		printf "\nBuild Tools:" >> BUILD;\
+		printf "\n\tCompiler (C): $(CC_VER)" >> BUILD;\
+		printf "\n\tCompiler (CPP): $(CXX_VER)" >> BUILD;\
+		printf "\n\tLinker: $(LD_VER)" >> BUILD;\
+	fi
 	
 $(BINARY_NAME): $(OBJECTS)
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [LINK BINARY] $@$(COLOR_INFO_POST)\n"
@@ -184,3 +202,4 @@ clean:
 	@find . -type f -name "*.d" -delete
 	@rm -f $(BINARY_NAME).map
 	@rm -f $(BINARY_NAME) $(BINARY_NAME).exe
+	@rm -f BUILD
