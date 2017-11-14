@@ -12,12 +12,13 @@ COMPILE_OPTIONS = -pthread
 # Support for Additional compile-time parameters
 #************************************************************************
 # override directive utilized for text assertions printed to end-user
-#https://www.gnu.org/software/make/manual/make.html#Override-Directive
+# https://www.gnu.org/software/make/manual/make.html#Override-Directive
 
 # [BUILD TYPE]
 # Defaults to debug build configuration if not specified
 # Supported options: debug, internal, release
-#https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/Debugging-Options.html#Debugging-Options
+# https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/Debugging-Options.html#Debugging-Options
+# DO NOT EDIT BUILD_FILE without consideration of "clean" recipie
 ifeq ($(build),release)
 	override build = RELEASE
 	LD_BUILD = 
@@ -61,15 +62,15 @@ endif
 # Settings below this point usually do not need to be edited
 #************************************************************************
 
+# [TERMINAL COLORIZATION]
+COLOR_INFO_PRE = \033[4;94m
+COLOR_INFO_POST = \033[0m
+
 # [WINDOWS] Adjust for target build environments (force .exe suffix)
 # NOTE (1): See LDFLAGS variable for additional notes
 ifeq ($(OS),Windows_NT)
 	OS_LINKER = -Xlinker --force-exe-suffix
 endif
-
-# [TERMINAL COLORIZATION]
-COLOR_INFO_PRE = \033[4;94m
-COLOR_INFO_POST = \033[0m
 
 # Automatically create lists of the sources and objects
 
@@ -101,6 +102,7 @@ LDLIBS =
 CC = gcc
 CXX = g++
 LD = ld
+
 # Version query commands
 CC_VER = $(CC) $(shell $(CC) -dumpversion)
 CXX_VER = $(CXX) $(shell $(CXX) -dumpversion)
@@ -119,15 +121,39 @@ OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 #### MAKE RECIPIES ####
 
 #.PHONY targets
-.PHONY: all clean dummy-all from-source info dirs version
+.PHONY: all build-log clean dirs dummy-all from-source info version
 
 all: | version dummy-all
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPLETE]$(COLOR_INFO_POST)\n"
 
+build-log:
+	@rm -f BUILD
+	@printf "($$(date --rfc-3339=seconds)) [BUILD]" >> BUILD
+	@printf "\nBuild Information:" >> BUILD
+	@printf "\n\tBuild Type: $(build)" >> BUILD
+	@printf "\n\tOptimization: $(optimize)" >> BUILD
+	@printf "\n\tTarget OS: $(OS)" >> BUILD
+	@printf "\nBuild Tools:" >> BUILD
+	@printf "\n\tCompiler (C): $(CC_VER)" >> BUILD
+	@printf "\n\tCompiler (CPP): $(CXX_VER)" >> BUILD
+	@printf "\n\tLinker: $(LD_VER)" >> BUILD
+
+clean:
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [CLEAN]$(COLOR_INFO_POST)\n"
+	@find . -type f -name "*.o" -delete
+	@find . -type f -name "*.d" -delete
+	@rm -f $(BINARY_NAME).map
+	@rm -f $(BINARY_NAME) $(BINARY_NAME).exe
+	@rm -f BUILD
+
+dirs:
+	@mkdir -p $(SOURCEDIR)
+	@mkdir -p $(LIBDIR)
+	
 dummy-all: | info $(BINARY_NAME)
 # Order-dependent to ensure information print-out is at top of console
 
-from-source: | clean all
+from-source: | clean build-log dummy-all
 # Order-dependent to ensure any existing compiled content is cleaned first.
 
 info:
@@ -142,27 +168,16 @@ info:
 	@printf "\n\tLinker: $(LD_VER)"
 	@printf "\n"
 
-dirs:
-	@mkdir -p $(SOURCEDIR)
-	@mkdir -p $(LIBDIR)
-
 version:
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [VERSION CHECK]$(COLOR_INFO_POST)\n"
 	@if $$(grep -q "$(build)" BUILD) && $$(grep -q "$(optimize)" BUILD); then\
 		printf "Build version and optimization are consistent.\n";\
 	else\
 		make clean;\
-		printf "($$(date --rfc-3339=seconds)) [BUILD]" > BUILD;\
-		printf "\nBuild Information:" >> BUILD;\
-		printf "\n\tBuild Type: $(build)" >> BUILD;\
-		printf "\n\tOptimization: $(optimize)" >> BUILD;\
-		printf "\n\tTarget OS: $(OS)" >> BUILD;\
-		printf "\nBuild Tools:" >> BUILD;\
-		printf "\n\tCompiler (C): $(CC_VER)" >> BUILD;\
-		printf "\n\tCompiler (CPP): $(CXX_VER)" >> BUILD;\
-		printf "\n\tLinker: $(LD_VER)" >> BUILD;\
+		make build-log;\
 	fi
-	
+
+#### ACTUAL INTERACTION WITH CODE (STARTS HERE) ####
 $(BINARY_NAME): $(OBJECTS)
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [LINK BINARY] $@$(COLOR_INFO_POST)\n"
 	$(CXX) $(CPP_DEBUG) -o $@ $(OBJECTS) $(LDFLAGS)
@@ -170,6 +185,7 @@ $(BINARY_NAME): $(OBJECTS)
 
 #### IMPLICIT RULES (DEFINED) ####
 # Re-Define C for added verbosity
+# Explicit use of (CXX) necessary for Cygwin compatibility
 %.o : %.c
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE C] $@$(COLOR_INFO_POST)\n"
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) -o $@
@@ -193,12 +209,3 @@ $(BINARY_NAME): $(OBJECTS)
 %.o : %.C
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
-
-#### MAKE CLEAN ####
-clean:
-	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [CLEAN]$(COLOR_INFO_POST)\n"
-	@find . -type f -name "*.o" -delete
-	@find . -type f -name "*.d" -delete
-	@rm -f $(BINARY_NAME).map
-	@rm -f $(BINARY_NAME) $(BINARY_NAME).exe
-	@rm -f BUILD
