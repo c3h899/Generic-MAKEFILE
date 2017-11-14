@@ -3,7 +3,7 @@ SOURCEDIR := Source
 LIBDIR := Libraries
 
 # The name of the project (names the compiled binary)
-BINARY_NAME = circle_box
+BINARY_NAME = test
 
 # COMPILER OPTIONS
 COMPILE_OPTIONS = -pthread
@@ -67,6 +67,10 @@ ifeq ($(OS),Windows_NT)
 	OS_LINKER = -Xlinker --force-exe-suffix
 endif
 
+# [TERMINAL COLORIZATION]
+COLOR_INFO_PRE = \033[4;94m
+COLOR_INFO_POST = \033[0m
+
 # Automatically create lists of the sources and objects
 
 # VPATH
@@ -118,7 +122,7 @@ OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 .PHONY: all clean dummy-all from-source info dirs
 
 all: dummy-all
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPLETE]\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPLETE]$(COLOR_INFO_POST)\n"
 
 dummy-all: | info $(BINARY_NAME)
 # Order-dependent to ensure information print-out is at top of console
@@ -127,7 +131,7 @@ from-source: | clean all
 # Order-dependent to ensure any existing compiled content is cleaned first.
 
 info:
-	@printf "\n($$(date --rfc-3339=seconds)) [MAKE]"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [MAKE]$(COLOR_INFO_POST)"
 	@printf "\nBuild Information:"
 	@printf "\n\tBuild Type: $(build)"
 	@printf "\n\tOptimization: $(optimize)"
@@ -141,41 +145,41 @@ info:
 dirs:
 	@mkdir -p $(SOURCEDIR)
 	@mkdir -p $(LIBDIR)
-
+	
 $(BINARY_NAME): $(OBJECTS)
-	@printf "\n($$(date --rfc-3339=seconds)) [LINK BINARY] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [LINK BINARY] $@$(COLOR_INFO_POST)\n"
 	$(CXX) $(CPP_DEBUG) -o $@ $(OBJECTS) $(LDFLAGS)
 	@# Everything goes to hell if CC is called, not CXX
 
 #### IMPLICIT RULES (DEFINED) ####
 # Re-Define C for added verbosity
 %.o : %.c
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPILE C] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE C] $@$(COLOR_INFO_POST)\n"
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) -o $@
 	
 # Re-Define CPP for added verbosity [1/4]
 %.o : %.cpp
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPILE CPP] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [2/4]
 %.o : %.cc
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPILE CPP] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [3/4]
 %.o : %.cxx
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPILE CPP] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [4/4]
 %.o : %.C
-	@printf "\n($$(date --rfc-3339=seconds)) [COMPILE CPP] $@\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
 
 #### MAKE CLEAN ####
 clean:
-	@printf "\n($$(date --rfc-3339=seconds)) [CLEAN]\n"
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [CLEAN]$(COLOR_INFO_POST)\n"
 	@find . -type f -name "*.o" -delete
 	@find . -type f -name "*.d" -delete
 	@rm -f $(BINARY_NAME).map
