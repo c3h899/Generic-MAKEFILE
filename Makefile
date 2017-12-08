@@ -144,6 +144,7 @@ clean:
 	@find . -type f -name "*.d" -delete
 	@rm -f $(BINARY_NAME).map
 	@rm -f $(BINARY_NAME) $(BINARY_NAME).exe
+	@rm -f $(BINARY_NAME).stackdump $(BINARY_NAME).exe.stackdump
 	@rm -f BUILD
 
 dirs:
