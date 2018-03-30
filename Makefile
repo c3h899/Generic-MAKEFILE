@@ -121,13 +121,13 @@ OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
 #### MAKE RECIPIES ####
 
 #.PHONY targets
-.PHONY: all build-log clean dirs dummy-all from-source info version\
-	git-commit-dev git-commit-master git-dev-branch	git-init git-master-branch
-
+.PHONY: all build-log clean dirs dummy-all from-source from-src info version\
+	commit-active commit-dev commit-master git-branch-dev git-branch-master git-init\
+	changes release-dev
 
 all: | version dummy-all
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPLETE]$(COLOR_INFO_POST)\n"
-
+	
 build-log:
 	@rm -f BUILD
 	@printf "($$(date --rfc-3339=seconds)) [BUILD]" >> BUILD
@@ -158,6 +158,9 @@ dummy-all: | info $(BINARY_NAME)
 
 from-source: | clean build-log dummy-all
 # Order-dependent to ensure any existing compiled content is cleaned first.
+
+from-src: from-source
+# Name Alias
 
 info:
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [MAKE]$(COLOR_INFO_POST)"
@@ -214,25 +217,42 @@ $(BINARY_NAME): $(OBJECTS)
 	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
 
 #### Git Interface Functionality ####
+# Wrappter for git differencing utilities with a few parameters
+changes:
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT LOG] $(COLOR_INFO_POST)\n"
+	git log --stat -3
+	git diff HEAD
 
 # Initialize Directory as GIT Repository
-git-commit-dev : git-dev-branch
+commit-active:
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT COMMIT] $(COLOR_INFO_POST)\n"
+	git add .
+	git commit --all
+
+# Changes Branch to Development Prior to Commit
+commit-dev : git-branch-dev
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT COMMIT DEV] $(COLOR_INFO_POST)\n"
 	git add .
 	git commit --all
-	
-git-commit-master : git-master-branch
+
+# Changes Branch to Master Prior to Commit	
+commit-master : git-branch-master
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT COMMIT MASTER] $(COLOR_INFO_POST)\n"
 	git add .
 	git commit --all
 	
-git-dev-branch:
+release-dev : git-branch-master
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT COMMIT MASTER] $(COLOR_INFO_POST)\n"
+	git merge Development
+	git checkout development
+	
+git-branch-dev:
 	git checkout development
 
-git-master-branch:
+git-branch-master:
 	git checkout master
 
-git-init : git-ignore
+git-init : dirs git-ignore
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [GIT INITIALIZATION] $(COLOR_INFO_POST)\n"
 	git init
 	git add .
