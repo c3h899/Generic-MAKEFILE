@@ -262,7 +262,8 @@ git-init : dirs git-ignore
 #=============================.gitignore RAW TEXT=============================#
 git-ignore:
 	@if [ ! -f .gitignore ]; then\
-		printf "\n# Created by https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext\n">.gitignore;\
+		printf "\n#Script Variables\nBUILD\n">.gitignore;\
+		printf "\n# Created by https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext\n">>.gitignore;\
 		printf "\n### C ###\n# Prerequisites\n*.d\n\n# Object files\n*.o\n*.ko\n*.obj\n*.elf\n\n">>.gitignore;\
 		printf "# Linker output\n*.ilk\n*.map\n*.exp\n\n# Precompiled Headers\n*.gch\n*.pch\n\n">>.gitignore;\
 		printf "# Libraries\n*.lib\n*.a\n*.la\n*.lo\n\n# Shared objects (inc. Windows DLLs)\n">>.gitignore;\
