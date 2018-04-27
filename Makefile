@@ -263,7 +263,7 @@ git-init : dirs git-ignore
 git-ignore:
 	@if [ ! -f .gitignore ]; then\
 		printf "\n#Script Variables\nBUILD\n">.gitignore;\
-		printf "\n# Created by https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext\n">>.gitignore;\
+		printf "\n# Created by https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext,matlab\n">>.gitignore;\
 		printf "\n### C ###\n# Prerequisites\n*.d\n\n# Object files\n*.o\n*.ko\n*.obj\n*.elf\n\n">>.gitignore;\
 		printf "# Linker output\n*.ilk\n*.map\n*.exp\n\n# Precompiled Headers\n*.gch\n*.pch\n\n">>.gitignore;\
 		printf "# Libraries\n*.lib\n*.a\n*.la\n*.lo\n\n# Shared objects (inc. Windows DLLs)\n">>.gitignore;\
@@ -301,6 +301,9 @@ git-ignore:
 		printf "# company-statistics\ncompany-statistics-cache.el\n\n# anaconda-mode\n">>.gitignore;\
 		printf "anaconda-mode/\n\n">>.gitignore;\
 		printf "### Git ###\n*.orig\n\n">>.gitignore;\
+		printf "### Matlab ###\n# Windows default autosave extension\n*.asv\n\n# OSX / *nix default autosave extension\n">>.gitignore;\
+		printf "*.m~\n\n# Compiled MEX binaries (all platforms)\n*.mex*\n\n# Simulink Code Generation\nslprj/\n\n">>.gitignore;\
+		printf "# Session info\noctave-workspace\n\n# Simulink autosave extension\n*.autosave\n\n">>.gitignore;\
 		printf "### OSX ###\n*.DS_Store\n.AppleDouble\n.LSOverride\n\n">>.gitignore;\
 		printf "# Icon must end with two \\r\nIcon\n\n# Thumbnails\n._*\n\n">>.gitignore;\
 		printf "# Files that might appear in the root of a volume\n.DocumentRevisions-V100\n">>.gitignore;\
@@ -364,6 +367,6 @@ git-ignore:
 		printf "ehthumbs_vista.db\n\n# Folder config file\nDesktop.ini\n\n">>.gitignore;\
 		printf "# Recycle Bin used on file shares\n\$RECYCLE.BIN/\n\n# Windows Installer files\n">>.gitignore;\
 		printf "*.cab\n*.msi\n*.msm\n*.msp\n\n# Windows shortcuts\n*.lnk\n\n\n">>.gitignore;\
-		printf "# End of https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext\n">>.gitignore;\
+		printf "# End of https://www.gitignore.io/api/c,cuda,osx,git,c++,vim,emacs,eclipse,tex,windows,fortran,sublimetext,matlab\n">>.gitignore;\
 	fi
 #=============================.gitignore RAW TEXT=============================#
