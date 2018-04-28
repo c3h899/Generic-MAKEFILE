@@ -6,7 +6,8 @@ LIBDIR := Libraries
 BINARY_NAME = Lightning_Sim
 
 # COMPILER OPTIONS
-COMPILE_OPTIONS = -pthread
+COMPILE_OPTIONS = -pthread -fopenmp
+LINK_OPTIONS = -fopenmp
 
 #************************************************************************
 # Support for Additional compile-time parameters
@@ -90,7 +91,7 @@ CXXFLAGS = -fPIC -std=gnu++1z -fno-elide-constructors -fno-exceptions
 CFLAGS =
 
 # [LINKER] "Extra flags to give to compilers when they are supposed to invoke the linker"
-LDFLAGS = -fPIC $(LD_BUILD) -Xlinker --warn-common $(OS_LINKER)
+LDFLAGS = -fPIC $(LD_BUILD) $(LINK_OPTIONS) -Xlinker --warn-common $(OS_LINKER)
 # [1] -Xlinker necessary for passing options to linker directly
 # see: https://gcc.gnu.org/onlinedocs/gcc-4.6.1/gcc/Link-Options.html for details
 
