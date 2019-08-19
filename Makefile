@@ -1,13 +1,15 @@
 # WHERE'S THE STUFF
-SOURCEDIR := Source
-LIBDIR := Libraries
+SOURCEDIR = Source
+LIBDIR = Libraries
 
+#************************************************************************
+# Compiller parameters
+#************************************************************************
 # The name of the project (names the compiled binary)
-BINARY_NAME = Lightning_Sim
+BINARY_NAME = bin
 
-# COMPILER OPTIONS
-COMPILE_OPTIONS = -pthread -fopenmp
-LINK_OPTIONS = -fopenmp
+# Architecture (Unified Settings)
+ARCH = -m64
 
 #************************************************************************
 # Support for Additional compile-time parameters
@@ -59,6 +61,33 @@ else
 	endif
 endif
 
+# [WINDOWS] Adjust for target build environments (force .exe suffix)
+# NOTE (1): See LDFLAGS variable for additional notes
+ifeq ($(OS),Windows_NT)
+	OS_LINKER = -Xlinker --force-exe-suffix
+endif
+
+# [TOOLCHAIN]
+# Names for the compiler programs
+ifeq ($(mpi),true)
+	override mpi = true
+	CC = mpicc
+	CXX = mpiCC
+else
+	override mpi = false
+	CC = gcc
+	CXX = g++
+endif
+LD = ld
+NVCC = nvcc
+
+# Version query commands
+CC_VER := $(CC) $(shell $(CC) -dumpversion)
+CXX_VER := $(CXX) $(shell $(CXX) -dumpversion)
+LD_VER := $(shell $(LD) -v)
+# (!) THIS IS BAD and NEEDS REVISION
+NVCC_VER := $(shell $(NVCC) -V | sed -En "s/([^z]+)release [0-9]+.[0-9], V/nvcc /p")
+
 #************************************************************************
 # Settings below this point usually do not need to be edited
 #************************************************************************
@@ -67,57 +96,76 @@ endif
 COLOR_INFO_PRE = \033[4;94m
 COLOR_INFO_POST = \033[0m
 
-# [WINDOWS] Adjust for target build environments (force .exe suffix)
-# NOTE (1): See LDFLAGS variable for additional notes
-ifeq ($(OS),Windows_NT)
-	OS_LINKER = -Xlinker --force-exe-suffix
-endif
+# [INTEL MKL]
+# https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor
+# Environment variables are set by intel script
+#    /opt/intel/bin/compilevars.sh -arch intel64 -platform linux
+# Architecture:Intel64 Linking:Dynamic Interface:32bit Threading:Intel OpenMP
+INTEL_COMPILE := -I$(MKLROOT)/include -fopenmp
+INTEL_LINK_FORTRAN := $(INTEL_LINK) -lmkl_gf_lp64
+INTEL_LINK := -L$(MKLROOT)/lib/intel64 -W -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl
+# Recommended pinning scheme fro MPI/OpenMP Programs
+# https://software.intel.com/en-us/mpi-developer-guide-linux-running-an-mpi-openmp-program
+I_MPI_PIN_DOMAIN = omp
+
+# [Nvidia CUDA]
+# https://github.com/hellopatrick/cuda-samples/blob/master/game_of_life_graphics/Makefile
+CUDA_PATH = /opt/cuda
+CUDA_INCLUDE := -I$(CUDA_PATH)/include
+CUDA_LFLAGS := -L$(CUDA_PATH)/lib  -lcudadevrt -lcuda -lcudart 
+
+LINK_OPTIONS := $(LD_BUILD) $(INTEL_LINK) $(CUDA_LFLAGS) -lm -Wl,--as-needed
 
 # Automatically create lists of the sources and objects
-
 # VPATH
-VPATH=$(SOURCEDIR):$(shell find $(LIBDIR) -maxdepth 1 -type d -printf '%f:')
+VPATH := $(SOURCEDIR):$(shell find $(LIBDIR) -maxdepth 1 -type d -printf '%f:')
 
 #### GNU MAKE VARIABLES ####
 # https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
 
-# [COMMON] "Extra flags to give to the C preprocessor and programs that use it (the C and Fortran compilers)."
-CPPFLAGS = -Wall $(CPP_DEBUG) $(COMPILE_OPTIMIZATION) -MMD $(COMPILE_OPTIONS) -I$(SOURCEDIR) $(shell find $(LIBDIR) -maxdepth 1 -type d -printf ' -I%p')
+# [COMMON] "Extra flags for C preprocessor and C-, CPP-, Fortran- compilers."
+FIND_LIB_DIRS = $(shell find $(LIBDIR) -maxdepth 1 -type d -printf ' -I%p')
 
-# [CPP] "Extra flags to give to the C++ compiler."
-CXXFLAGS = -fPIC -std=gnu++1z -fno-elide-constructors -fno-exceptions
+# [COMPILER OPTIONS]
+COMPILE_OPTIONS := $(ARCH) $(COMPILE_OPTIMIZATION) $(INTEL_COMPILE) $(CUDA_INCLUDE)
+COMPILE_OPTIONS += -I$(SOURCEDIR) $(FIND_LIB_DIRS) -Wall -MMD
+DEBUG_OPTIONS := $(CPP_DEBUG)
 
-# [C] "Extra flags to give to the C compiler."
-CFLAGS =
+# [CPP] "Extra flags for C++ compiler."
+CXXFLAGS := -fPIC -std=c++17 -fno-elide-constructors -fno-exceptions
 
-# [LINKER] "Extra flags to give to compilers when they are supposed to invoke the linker"
-LDFLAGS = -fPIC $(LD_BUILD) $(LINK_OPTIONS) -Xlinker --warn-common $(OS_LINKER)
+# [C] "Extra flags for C compiler."
+CFLAGS :=
+
+# [LINKER] "Extra flags to give when invoking the linker"
+LDFLAGS := -fPIC $(LINK_OPTIONS) -Xlinker --warn-common $(OS_LINKER)
 # [1] -Xlinker necessary for passing options to linker directly
 # see: https://gcc.gnu.org/onlinedocs/gcc-4.6.1/gcc/Link-Options.html for details
 
-# [LINKER] "Library flags or names given to compilers when they are supposed to invoke the linker"
-LDLIBS = 
+# [LINKER] "Library flags supplied when invoking the linker"
+LDLIBS := 
 
-#### TOOLCHAIN ####
-# Names for the compiler programs
-CC = gcc
-CXX = g++
-LD = ld
-
-# Version query commands
-CC_VER = $(CC) $(shell $(CC) -dumpversion)
-CXX_VER = $(CXX) $(shell $(CXX) -dumpversion)
-LD_VER = $(shell $(LD) -v)
+# [CU] "Extra flags to give to Cuda compiler
+NVCCFLAGS := -arch=compute_60 --compiler-bindir $(CC)
 
 #### FIND ALL THE SOURCES ####
 # Find Source Files in Source and Library Directory
 C_FILES := $(shell find $(SOURCEDIR) -name '*.c')
 CPP_FILES := $(shell find $(SOURCEDIR) -name '*.cpp')
-
+CU_FILES := $(shell find $(SOURCEDIR) -name '*.cu')
 C_LIBS := $(shell find $(LIBDIR) -name '*.c')
 CPP_LIBS := $(shell find $(LIBDIR) -name '*.cpp')
+CU_LIBS := $(shell find $(LIBDIR) -name '*.cu')
+
 OBJECTS := $(C_LIBS:.c=.o) $(C_FILES:.c=.o)
 OBJECTS += $(CPP_LIBS:.cpp=.o) $(CPP_FILES:.cpp=.o)
+CUDAOBJ := $(CU_LIBS:.cu=.o) $(CU_FILES:.cu=.o)
+# Compile Cuda objects to device code, if any.
+ifeq ($(strip $(CUDAOBJ)),)
+	override DEV_OBJ :=
+else
+	override DEV_OBJ := _device.o
+endif
 
 #### MAKE RECIPIES ####
 
@@ -139,6 +187,7 @@ build-log:
 	@printf "\nBuild Tools:" >> BUILD
 	@printf "\n\tCompiler (C): $(CC_VER)" >> BUILD
 	@printf "\n\tCompiler (CPP): $(CXX_VER)" >> BUILD
+	@printf "\n\tCompiler (CU): $(NVCC_VER)" >> BUILD
 	@printf "\n\tLinker: $(LD_VER)" >> BUILD
 
 clean:
@@ -172,6 +221,7 @@ info:
 	@printf "\nBuild Tools:"
 	@printf "\n\tCompiler (C): $(CC_VER)"
 	@printf "\n\tCompiler (CPP): $(CXX_VER)"
+	@printf "\n\tCompiler (CU): $(NVCC_VER)"
 	@printf "\n\tLinker: $(LD_VER)"
 	@printf "\n"
 
@@ -185,37 +235,46 @@ version:
 	fi
 
 #### ACTUAL INTERACTION WITH CODE (STARTS HERE) ####
-$(BINARY_NAME): $(OBJECTS)
+# Explicit use of (CXX) necessary for Cygwin compatibility
+$(BINARY_NAME): $(OBJECTS) $(CUDAOBJ) $(DEV_OBJ)
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [LINK BINARY] $@$(COLOR_INFO_POST)\n"
-	$(CXX) $(CPP_DEBUG) -o $@ $(OBJECTS) $(LDFLAGS)
+	$(CXX) $(CPP_DEBUG) -o $@ $(OBJECTS) $(CUDAOBJ) $(DEV_OBJ) $(LDFLAGS)
 	@# Everything goes to hell if CC is called, not CXX
+
+$(DEV_OBJ): $(CUDAOBJ)
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [LINK DEVICE] $@$(COLOR_INFO_POST)\n"
+	$(NVCC) $(CUFLAGS) $(NVCCFLAGS) $(CUDAOBJ) --device-link -o $(DEV_OBJ) -Xlinker "$(LDFLAGS)"
 
 #### IMPLICIT RULES (DEFINED) ####
 # Re-Define C for added verbosity
-# Explicit use of (CXX) necessary for Cygwin compatibility
 %.o : %.c
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE C] $@$(COLOR_INFO_POST)\n"
-	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) -o $@
+	$(CC) -c $< $(COMPILE_OPTIONS) $(DEBUG_OPTIONS) $(CFLAGS) -o $@
 	
 # Re-Define CPP for added verbosity [1/4]
 %.o : %.cpp
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
-	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
+	$(CXX) -c $< $(COMPILE_OPTIONS) $(DEBUG_OPTIONS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [2/4]
 %.o : %.cc
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
-	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
+	$(CXX) -c $< $(COMPILE_OPTIONS) $(DEBUG_OPTIONS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [3/4]
 %.o : %.cxx
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
-	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
+	$(CXX) -c $< $(COMPILE_OPTIONS) $(DEBUG_OPTIONS) $(CXXFLAGS) -o $@
 
 # Re-Define CPP for added verbosity [4/4]
 %.o : %.C
 	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CPP] $@$(COLOR_INFO_POST)\n"
-	$(CXX) -c $< $(CPPFLAGS) $(CXXFLAGS) -o $@
+	$(CXX) -c $< $(COMPILE_OPTIONS) $(DEBUG_OPTIONS) $(CXXFLAGS) -o $@
+
+# CUDA Compiler
+%.o : %.cu
+	@printf "\n$(COLOR_INFO_PRE)($$(date --rfc-3339=seconds)) [COMPILE CU] $@$(COLOR_INFO_POST)\n"
+	$(NVCC) $(CUFLAGS) -dc $< -o $@ $(NVCCFLAGS) --compiler-options "$(COMPILE_OPTIONS)"
 
 #### Git Interface Functionality ####
 # Wrappter for git differencing utilities with a few parameters
